@@ -29,6 +29,7 @@ async function run() {
 
         const blogCollection = client.db("elevenDB").collection('blog');
         const wishCollection = client.db("elevenDB").collection('wishlist');
+        const commentCollection = client.db("elevenDB").collection('comment');
 
         // blog
         app.get('/blog', async (req, res) => {
@@ -70,6 +71,37 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/blog', async(req,res)=> {
+            const search = req.query.search
+
+            let query = {
+                blog_title : {$regex : search, $options: "i"}
+            }
+            
+            const result = blogCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        // comment
+        app.get('/comment', async (req, res) => {
+            const cursor = commentCollection.find()
+            const result = await cursor.toArray();
+
+            res.send(result)
+        })
+        app.post('/comment', async (req, res) => {
+            const newComment = req.body;
+            console.log(newComment);
+            const result = await commentCollection.insertOne(newComment)
+            res.send(result)
+        })
+        app.get('/comment/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await commentCollection.findOne(query)
+            res.send(result)
+        })
+
         // WishList
         app.get('/wish', async (req, res) => {
             const cursor = wishCollection.find()
@@ -85,12 +117,12 @@ async function run() {
             const result = await wishCollection.insertOne(wish)
             res.send(result)
         })
-        app.get('/wish/:_id', async (req, res) => {
-            const wishId = req.params._id;
-            const query = { wishId: new ObjectId(wishId) }
-            const result = await wishCollection.findOne(query)
-            res.send(result)
-        })
+        // app.get('/wish/:_id', async (req, res) => {
+        //     const wishId = req.params._id;
+        //     const query = { wishId: new ObjectId(wishId) }
+        //     const result = await wishCollection.findOne(query)
+        //     res.send(result)
+        // })
 
         app.get('/wish/:email', async(req,res)=> {
             console.log(req.params.email);
