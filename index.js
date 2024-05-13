@@ -79,17 +79,18 @@ async function run() {
         })
 
         app.post('/wish', async(req,res)=> {
+            
             const wish = req.body;
             console.log(wish);
             const result = await wishCollection.insertOne(wish)
             res.send(result)
         })
-        // app.get('/wish/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: new ObjectId(id) }
-        //     const result = await wishCollection.findOne(query)
-        //     res.send(result)
-        // })
+        app.get('/wish/:_id', async (req, res) => {
+            const wishId = req.params._id;
+            const query = { wishId: new ObjectId(wishId) }
+            const result = await wishCollection.findOne(query)
+            res.send(result)
+        })
 
         app.get('/wish/:email', async(req,res)=> {
             console.log(req.params.email);
