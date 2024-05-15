@@ -7,11 +7,11 @@ require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
 //  middleware
-app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5000'],
-    credentials: true
-}))
-// app.use(cors())
+// app.use(cors({
+//     origin: ['http://localhost:5173', 'http://localhost:5000'],
+//     credentials: true
+// }))
+app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
@@ -24,17 +24,17 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 // middlewares
 
-const logger = (req, res, next) => {
-    console.log('log:info', req.method, req.url);
-    next()
-}
+// const logger = (req, res, next) => {
+//     console.log('log:info', req.method, req.url);
+//     next()
+// }
 
-const verifyToken = (req, res, next) => {
-    const token = req?.cookies?.token
-    console.log('token in the middleware', token)
-    next()
+// const verifyToken = (req, res, next) => {
+//     const token = req?.cookies?.token
+//     console.log('token in the middleware', token)
+//     next()
 
-}
+// }
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -62,7 +62,7 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
                 .cookie('token', token, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: 'none'
+                     sameSite: 'none'
 
                 })
                 .send({ success: true })
@@ -111,16 +111,16 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
             res.send(result)
         })
 
-        app.get('/blog', async (req, res) => {
-            const search = req.query.search
+        // app.get('/blog', async (req, res) => {
+        //     const search = req.query.search
 
-            let query = {
-                blog_title: { $regex: search, $options: "i" }
-            }
+        //     let query = {
+        //         blog_title: { $regex: search, $options: "i" }
+        //     }
 
-            const result = blogCollection.find(query).toArray()
-            res.send(result)
-        })
+        //     const result = blogCollection.find(query).toArray()
+        //     res.send(result)
+        // })
 
         // comment
         app.get('/comment', async (req, res) => {
@@ -191,7 +191,7 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
 
         })
 
-        app.get('/wish/:email', logger, verifyToken, async (req, res) => {
+        app.get('/wish/:email', async (req, res) => {
             console.log(req.params.email);
             const result = await wishCollection.find({ email: req.params.email }).toArray()
             console.log(result);
