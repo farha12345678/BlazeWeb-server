@@ -1,19 +1,40 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
-
-// middleware
-app.use(cors())
+//  middleware
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:5000'],
+    credentials: true
+}))
+// app.use(cors())
 app.use(express.json())
+app.use(cookieParser())
 
 
 
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rnkwiqi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+
+
+// middlewares
+
+const logger = (req, res, next) => {
+    console.log('log:info', req.method, req.url);
+    next()
+}
+
+const verifyToken = (req, res, next) => {
+    const token = req?.cookies?.token
+    console.log('token in the middleware', token)
+    next()
+
+}
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -30,6 +51,25 @@ async function run() {
         const blogCollection = client.db("elevenDB").collection('blog');
         const wishCollection = client.db("elevenDB").collection('wishlist');
         const commentCollection = client.db("elevenDB").collection('comment');
+
+console.log(process.env.ACCESS_TOKEN_SECRET);
+        // auth related api
+        app.post('/jwt', async (req, res) => {
+            const user = req.body
+            console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'none'
+
+                })
+                .send({ success: true })
+
+        })
+
+
 
         // blog
         app.get('/blog', async (req, res) => {
@@ -71,13 +111,13 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/blog', async(req,res)=> {
+        app.get('/blog', async (req, res) => {
             const search = req.query.search
 
             let query = {
-                blog_title : {$regex : search, $options: "i"}
+                blog_title: { $regex: search, $options: "i" }
             }
-            
+
             const result = blogCollection.find(query).toArray()
             res.send(result)
         })
@@ -95,11 +135,29 @@ async function run() {
             const result = await commentCollection.insertOne(newComment)
             res.send(result)
         })
-        app.get('/comment/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) }
-            const result = await commentCollection.findOne(query)
+
+
+        app.get('/comments', async (req, res) => {
+            let query = {}
+            if (req.query?.commentId) {
+                query = { commentId: req.query.commentId }
+            }
+            const result = await commentCollection.find(query).toArray()
             res.send(result)
+        })
+
+        //  app.get('/comment/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: new ObjectId(id) }
+        //     const result = await commentCollection.findOne(query)
+        //     res.send(result)
+        // })
+        app.get('/comment', async (req, res) => {
+            console.log(req.params.commentId);
+            const result = await wishCollection.find({ commentId: req.params.commentId }).toArray()
+
+            res.send(result)
+
         })
 
         // WishList
@@ -110,8 +168,8 @@ async function run() {
             res.send(result)
         })
 
-        app.post('/wish', async(req,res)=> {
-            
+        app.post('/wish', async (req, res) => {
+
             const wish = req.body;
             console.log(wish);
             const result = await wishCollection.insertOne(wish)
@@ -123,59 +181,68 @@ async function run() {
         //     const result = await wishCollection.findOne(query)
         //     res.send(result)
         // })
-
-        app.get('/wish/:email', async(req,res)=> {
-            console.log(req.params.email);
-            const result =await wishCollection.find({email:req.params.email}).toArray()
-           
+        app.delete('/wish/:id', async (req, res) => {
+            const id = req.params.id;
+            
+            const query = { _id: new ObjectId(id) }
+            const result = await wishCollection.deleteOne(query)
             res.send(result)
             
+
+        })
+
+        app.get('/wish/:email', logger, verifyToken, async (req, res) => {
+            console.log(req.params.email);
+            const result = await wishCollection.find({ email: req.params.email }).toArray()
+            console.log(result);
+            res.send(result)
+
         })
         // server.js
 
-// const express = require('express');
-// const bodyParser = require('body-parser');
-// const MongoClient = require('mongodb').MongoClient;
+        // const express = require('express');
+        // const bodyParser = require('body-parser');
+        // const MongoClient = require('mongodb').MongoClient;
 
-// const app = express();
-// const port = 3000;
+        // const app = express();
+        // const port = 3000;
 
-// Middleware
-// app.use(bodyParser.json());
+        // Middleware
+        // app.use(bodyParser.json());
 
-// MongoDB connection URL
-// const url = 'mongodb://localhost:27017';
-// const dbName = 'yourDatabaseName';
+        // MongoDB connection URL
+        // const url = 'mongodb://localhost:27017';
+        // const dbName = 'yourDatabaseName';
 
-// API endpoint for job search
-// app.post('/searchBlogs', async (req, res) => {
-//     try {
+        // API endpoint for job search
+        // app.post('/searchBlogs', async (req, res) => {
+        //     try {
         // Connect to MongoDB
         // const client = await MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
         // const db = client.db(dbName);
-        
+
         // Search term from client-side
         // const searchTerm = req.body.searchTerm;
-        
+
         // Construct regex pattern
         // const regexPattern = new RegExp(searchTerm, "i");
 
         // MongoDB query
         // const query = { title: { $regex: regexPattern } };
-        
+
         // Execute the query
         // const matchedBlogs = await blogCollection.find(query).toArray();
-        
+
         // Close the connection
         // client.close();
 
         // Send the matched jobs back to the client
-//         res.json({ blogs: matchedBlogs });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ error: 'Internal server error' });
-//     }
-// });
+        //         res.json({ blogs: matchedBlogs });
+        //     } catch (err) {
+        //         console.error(err);
+        //         res.status(500).json({ error: 'Internal server error' });
+        //     }
+        // });
 
 
 
@@ -185,7 +252,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
