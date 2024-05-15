@@ -7,11 +7,11 @@ require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
 //  middleware
-// app.use(cors({
-//     origin: ['http://localhost:5173', 'http://localhost:5000'],
-//     credentials: true
-// }))
-app.use(cors())
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:5000'],
+    credentials: true
+}))
+// app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
@@ -24,17 +24,27 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 // middlewares
 
-// const logger = (req, res, next) => {
-//     console.log('log:info', req.method, req.url);
-//     next()
-// }
+const logger = (req, res, next) => {
+    console.log('log:info', req.method, req.url);
+    next()
+}
 
 // const verifyToken = (req, res, next) => {
 //     const token = req?.cookies?.token
-//     console.log('token in the middleware', token)
-//     next()
+//     // console.log('token in the middleware', token)
+//     if(!token){
+//         return res.status(401).send({message:'token unauthorized'})
+//     }
+//     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err,decoded)=> {
+//         if(err){
+//             return res.status(401).send({message:'token unauthorized'})
+//         }
+//         res.user = decoded;
+//         next()
+//     })
+    // next()
 
-// }
+
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -73,7 +83,7 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
 
         // blog
         app.get('/blog', async (req, res) => {
-            const cursor = blogCollection.find()
+            const cursor = blogCollection.find().sort({ date: -1 });
             const result = await cursor.toArray();
 
             res.send(result)
@@ -191,8 +201,9 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
 
         })
 
-        app.get('/wish/:email', async (req, res) => {
+        app.get('/wish/:email', logger, async (req, res) => {
             console.log(req.params.email);
+            console.log('token owner info' , req.user);
             const result = await wishCollection.find({ email: req.params.email }).toArray()
             console.log(result);
             res.send(result)
