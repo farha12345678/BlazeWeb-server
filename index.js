@@ -22,11 +22,11 @@ app.use(cookieParser())
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.rnkwiqi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 
-// middlewares
+// middleware
 
 const logger = (req, res, next) => {
     console.log('log:info', req.method, req.url);
-    next()
+    next();
 }
 
 // const verifyToken = (req, res, next) => {
