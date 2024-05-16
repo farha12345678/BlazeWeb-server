@@ -1,19 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser')
+
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
 //  middleware
-app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5000'],
-    credentials: true
-}))
-// app.use(cors())
+
+app.use(cors())
 app.use(express.json())
-app.use(cookieParser())
+
 
 
 
@@ -24,10 +20,10 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 // middleware
 
-const logger = (req, res, next) => {
-    console.log('log:info', req.method, req.url);
-    next();
-}
+// const logger = (req, res, next) => {
+//     console.log('log:info', req.method, req.url);
+//     next();
+// }
 
 // const verifyToken = (req, res, next) => {
 //     const token = req?.cookies?.token
@@ -62,22 +58,22 @@ async function run() {
         const wishCollection = client.db("elevenDB").collection('wishlist');
         const commentCollection = client.db("elevenDB").collection('comment');
 
-console.log(process.env.ACCESS_TOKEN_SECRET);
+// console.log(process.env.ACCESS_TOKEN_SECRET);
         // auth related api
-        app.post('/jwt', async (req, res) => {
-            const user = req.body
-            console.log(user);
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res
-                .cookie('token', token, {
-                    httpOnly: true,
-                    secure: true,
-                     sameSite: 'none'
+        // app.post('/jwt', async (req, res) => {
+        //     const user = req.body
+        //     console.log(user);
+        //     const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+        //     res
+        //         .cookie('token', token, {
+        //             httpOnly: true,
+        //             secure: true,
+        //              sameSite: 'none'
 
-                })
-                .send({ success: true })
+        //         })
+        //         .send({ success: true })
 
-        })
+        // })
 
 
 
@@ -121,17 +117,7 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
             res.send(result)
         })
 
-        // app.get('/blog', async (req, res) => {
-        //     const search = req.query.search
-
-        //     let query = {
-        //         blog_title: { $regex: search, $options: "i" }
-        //     }
-
-        //     const result = blogCollection.find(query).toArray()
-        //     res.send(result)
-        // })
-
+        
         // comment
         app.get('/comment', async (req, res) => {
             const cursor = commentCollection.find()
@@ -201,7 +187,7 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
 
         })
 
-        app.get('/wish/:email', logger, async (req, res) => {
+        app.get('/wish/:email', async (req, res) => {
             console.log(req.params.email);
             console.log('token owner info' , req.user);
             const result = await wishCollection.find({ email: req.params.email }).toArray()
@@ -209,52 +195,7 @@ console.log(process.env.ACCESS_TOKEN_SECRET);
             res.send(result)
 
         })
-        // server.js
-
-        // const express = require('express');
-        // const bodyParser = require('body-parser');
-        // const MongoClient = require('mongodb').MongoClient;
-
-        // const app = express();
-        // const port = 3000;
-
-        // Middleware
-        // app.use(bodyParser.json());
-
-        // MongoDB connection URL
-        // const url = 'mongodb://localhost:27017';
-        // const dbName = 'yourDatabaseName';
-
-        // API endpoint for job search
-        // app.post('/searchBlogs', async (req, res) => {
-        //     try {
-        // Connect to MongoDB
-        // const client = await MongoClient.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
-        // const db = client.db(dbName);
-
-        // Search term from client-side
-        // const searchTerm = req.body.searchTerm;
-
-        // Construct regex pattern
-        // const regexPattern = new RegExp(searchTerm, "i");
-
-        // MongoDB query
-        // const query = { title: { $regex: regexPattern } };
-
-        // Execute the query
-        // const matchedBlogs = await blogCollection.find(query).toArray();
-
-        // Close the connection
-        // client.close();
-
-        // Send the matched jobs back to the client
-        //         res.json({ blogs: matchedBlogs });
-        //     } catch (err) {
-        //         console.error(err);
-        //         res.status(500).json({ error: 'Internal server error' });
-        //     }
-        // });
-
+       
 
 
 
@@ -281,3 +222,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`server is running on port ${port}`);
 })
+
+ //   "rewrites": [
+  //     {"source": "/(.*)", "destination": "/"}
+  // ]
